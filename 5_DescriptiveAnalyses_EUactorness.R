@@ -174,7 +174,7 @@ df <- io.agents %>%
   summarise_all(mean) %>% 
   pivot_longer(cols = 2:13) %>% 
   mutate(name = toupper(name)) %>% 
-  mutate(name = name %>% str_replace("AFU", "AU")) %>% # Note: Named differently before, to prevent overlap with iso2 for Australia
+  mutate(name = name %>% str_replace("AFU", "OAU/AU")) %>% # Note: Named differently before, to prevent overlap with iso2 for Australia
   mutate(name = name %>% str_replace("WORLDBANK", "WB")) %>% 
   mutate(name = name %>% str_replace("ANDEAN", "AND")) %>% 
   filter(name != "UN") # because it trumps everything anyway
@@ -195,9 +195,9 @@ ggplot(df, aes(x=year, y = value, color = name2)) +
   labs(y = "\nAnnual share of UNGD speeches\nthat recognize actorness of the respective IO at least once\n ",
        caption = "Loess-smoothed time trends, dashed line indicates grand mean 1970-2020.",
        x="")+
-  scale_color_manual(values = c("#003399", "#8da0cb", "#cc66ff", "#cc66ff", "grey40", "#cc66ff", "#8da0cb", "#8da0cb", "#8da0cb", "grey40", "#8da0cb"))+
+  scale_color_manual(values = c("#8da0cb", "#003399", "#cc66ff", "#cc66ff", "grey40", "#cc66ff", "#8da0cb", "#8da0cb", "#8da0cb", "grey40", "#8da0cb"))+
   facet_grid(.~name2)+
-  coord_cartesian(ylim = c(0,.2))+
+  coord_cartesian(ylim = c(0,.25))+
   theme_bw()+
   theme(legend.position = "none",
         text = element_text(size = 12),

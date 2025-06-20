@@ -2,7 +2,7 @@
 # Project:  EU actorness recognition (International Interactions)
 # Task:     Embedd UNGD speeches and compare to semantic poles
 #           (economy, security, liberal democracy)
-# Author:   @ChRauh (June 11, 2025)
+# Author:   @ChRauh (June 19, 2025)
 #####################################################################
 
 
@@ -17,7 +17,8 @@ library(scales) # Scale Functions for Visualization CRAN v1.4.0
 library(countrycode) # Convert Country Names and Country Codes CRAN v1.6.1
 library(patchwork) # The Composer of Plots CRAN v1.3.0
 library(xlsx) # Read, Write, Format Excel 2007 and Excel 97/2000/XP/2003 Files CRAN v0.6.5
-
+library(lsa) 
+library(text2vec)
 
 # Pre-trained word vector model ###
 
@@ -55,7 +56,7 @@ sent <- read_rds("./data/UNGD/ungd_sentences.rds") %>%
 
 # Tokenize the texts, store long form by token holding the doc_id (= sentence),
 # and embed each token in the GLOVE vector space (this may take some time - prior test suggest ~ 45 mins)
-start <- Sys.time()
+# start <- Sys.time()
 token.vectors <- 
   sent %>%
   tidytext::unnest_tokens(token, # Name of target column holding the tokens
@@ -65,11 +66,12 @@ token.vectors <-
   filter(!(token %in% quanteda::stopwords("english"))) %>% 
   filter(str_detect(token, "[A-Za-z]")) %>% # Only words, drop punct and numbers
   left_join(glove.300, by = "token")
-Sys.time()-start
+# Sys.time()-start
 
 
 # Keep full vocab for later
 unga.vocab <- unique(token.vectors$token)
+write_rds(unga.vocab, "./data/ungd_vocab.rds")
 
 
 # Clean up
@@ -80,13 +82,13 @@ gc()
 # Average vector per sentence ####
 # Also quite a memory intense task ...
 
-start <- Sys.time()
+# start <- Sys.time()
 sent.vectors.av <-
   token.vectors %>%
   select(-token) %>%
   group_by(doc_id, sentence_id) %>%
   summarise(across(.cols = everything(), mean, na.rm = T)) # Note: everything() excludes grouping var
-Sys.time()-start
+# Sys.time()-start
 
 
 # Export
@@ -94,7 +96,11 @@ write_rds(sent.vectors.av, "./data/Sentence-GLOVE-vectors.rds")
 
 # Clean up
 rm(token.vectors)
+rm(sent)
 gc()
+
+start
+Sys.time() # 6 hours until here
 
 
 
@@ -102,12 +108,16 @@ gc()
 #####################
 # Semantic poles ####
 
+# NOTE - if you run out of RAM, you can also r-start from here (based on the library calls above)
+
 # Re-load sentence vectors
 sent.vectors.av <- read_rds("./data/Sentence-GLOVE-vectors.rds")
 
 # Pre-trained word vector model - reload
 glove.300 <- read_rds("./data/GloVe/glove.6B.300d.rds")
 
+# UNGD vocabulary - reload
+unga.vocab <- read_rds("./data/ungd_vocab.rds")
 
 # Function to find nearest neighbours in word vectors model ####
 # Taken from: https://gist.github.com/tjvananne/8b0e7df7dcad414e8e6d5bf3947439a9
@@ -248,6 +258,10 @@ seed.simil <- function(seed.tokens,    # Character vector of seed tokens
 
 # Extract sentence level similiarity 
 
+# Prepare UNGD sentences ####
+sent <- read_rds("./data/UNGD/ungd_sentences.rds") %>% 
+  select(doc_id, sentence_id, sentence)
+
 # Some sentences get dropped in the embedding process above
 # e.g. if they only contain stopwords, punctuation or numbers
 # Harmonize this here
@@ -265,7 +279,7 @@ gc()
 
 
 # Measure similarities
-start <- Sys.time()
+# start <- Sys.time()
 sent$dem.simil <- seed.simil(democracy.seeds,
                                sent.vectors.av %>% select(starts_with("V")),
                                glove.300)
@@ -278,7 +292,7 @@ sent$sec.simil <- seed.simil(security.seeds,
                                sent.vectors.av %>% select(starts_with("V")),
                                glove.300)
 gc()
-Sys.time() - start
+# Sys.time() - start
 
 
 # Export results 
@@ -314,4 +328,4 @@ write.xlsx(t, "./output/Appendix_Table3_SemanticSimilToTargetVectors_RAW.xlsx")
 
 # Measure run time
 duration <- Sys.time() - start
-duration # Time difference of 8.1583378 hours
+duration # Time difference of 9.704878 hours
