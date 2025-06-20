@@ -300,7 +300,7 @@ pl.joint <-
   theme(plot.caption = element_text(hjust = .5, size = 12),
         plot.title = element_text(hjust = .5, size = 16, face = "bold"))
 
-ggsave("./output/Fig4_EUactoness-vs-Top25countries.png", pl.joint,  width = 32, height = 20, units = "cm")
+ggsave("./output/Fig4_EUactorness-vs-Top25countries.png", pl.joint,  width = 32, height = 20, units = "cm")
 
 
 
